@@ -71,3 +71,29 @@ export interface ResolvedEvent extends DroneEvent {
   venue: Venue;
   attendees: { pilot: Pilot; drone: Drone }[];
 }
+
+/** The minimum needed to draw a drone. Both seed drones and RSVP'd builds satisfy it. */
+export interface DroneLike {
+  name: string;
+  class: DroneClass;
+  imageUrl?: string | null;
+}
+
+/** A real pilot who signed up, read from Postgres. */
+export interface RsvpAttendee {
+  id: number;
+  username: string;
+  droneName: string;
+  droneClass: DroneClass;
+  /** True when this row belongs to the viewer. Always false until auth lands. */
+  isYou: boolean;
+}
+
+/**
+ * Seed pilots are illustrative demo content; RSVP rows are real people. A
+ * discriminated union forces the UI to handle both and makes it impossible to
+ * render a real signup as demo data by accident.
+ */
+export type Attendee =
+  | { kind: "seed"; pilot: Pilot; drone: Drone }
+  | { kind: "rsvp"; rsvp: RsvpAttendee };

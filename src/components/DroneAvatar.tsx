@@ -1,11 +1,11 @@
-import type { Drone } from "@/types";
+import type { DroneLike } from "@/types";
 
 /**
  * The drone-avatar seam. Today this renders a flat glyph; when real .glb models
  * land, only this file's internals change — every call site stays as-is. That is
  * why `Drone.model3d` already exists on the type.
  */
-export default function DroneAvatar({ drone }: { drone: Drone }) {
+export default function DroneAvatar({ drone }: { drone: DroneLike }) {
   return (
     <div
       className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-surface-raised"

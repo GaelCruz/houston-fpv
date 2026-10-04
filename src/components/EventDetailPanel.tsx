@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import AttendeeList from "@/components/AttendeeList";
 import EventTypeBadge from "@/components/EventTypeBadge";
 import PhotoGallery from "@/components/PhotoGallery";
 import { openDirections } from "@/lib/directions";
 import { formatEventWhen } from "@/lib/format";
-import type { ResolvedEvent } from "@/types";
+import type { Attendee, ResolvedEvent, RsvpAttendee } from "@/types";
 
 /**
  * A sheet, not a modal: covering the map would hide the spatial context that is
@@ -21,6 +21,8 @@ export default function EventDetailPanel({
   event: ResolvedEvent | null;
   onClose: () => void;
 }) {
+  const [loaded, setLoaded] = useState<{ slug: string; attendees: RsvpAttendee[] } | null>(null);
+
   useEffect(() => {
     if (!event) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -30,9 +32,54 @@ export default function EventDetailPanel({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [event, onClose]);
 
+  const slug = event?.slug;
+
+  /**
+   * RSVPs are fetched here rather than during the page render, so the public map
+   * stays statically prerendered and personal state never lands in a shared
+   * cache. One query per event a visitor actually opens.
+   */
+  useEffect(() => {
+    if (!slug) return;
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/events/${encodeURIComponent(slug)}/attendees`, {
+          signal: controller.signal,
+        });
+        const data = res.ok ? await res.json() : { attendees: [] };
+        setLoaded({ slug, attendees: data.attendees ?? [] });
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
+        // Seed attendees still render; a failed fetch costs only the real ones.
+        console.error("[panel] could not load signups:", error);
+        setLoaded({ slug, attendees: [] });
+      }
+    })();
+
+    return () => controller.abort();
+  }, [slug]);
+
+  /**
+   * Whether the loaded data belongs to the event on screen. Deriving this rather
+   * than tracking it separately means switching events can never flash the
+   * previous event's signups.
+   */
+  const loadingRsvps = Boolean(slug) && loaded?.slug !== slug;
+
+  const attendees: Attendee[] = useMemo(() => {
+    if (!event) return [];
+    const rsvps = loaded && loaded.slug === event.slug ? loaded.attendees : [];
+    return [
+      ...event.attendees.map((a) => ({ kind: "seed" as const, pilot: a.pilot, drone: a.drone })),
+      ...rsvps.map((rsvp) => ({ kind: "rsvp" as const, rsvp })),
+    ];
+  }, [event, loaded]);
+
   if (!event) return null;
 
-  const { venue, attendees } = event;
+  const { venue } = event;
 
   return (
     <aside
@@ -86,7 +133,7 @@ export default function EventDetailPanel({
         </Section>
 
         <Section title={`Pilots flying (${attendees.length})`}>
-          <AttendeeList attendees={attendees} />
+          <AttendeeList attendees={attendees} loading={loadingRsvps} />
         </Section>
       </div>
     </aside>
