@@ -25,6 +25,7 @@ export async function getEventRsvps(slug: string): Promise<RsvpAttendee[]> {
     const rows = await db
       .select({
         id: rsvps.id,
+        pilotId: rsvps.pilotId,
         username: pilots.username,
         droneName: pilots.droneName,
         droneClass: pilots.droneClass,
@@ -34,7 +35,8 @@ export async function getEventRsvps(slug: string): Promise<RsvpAttendee[]> {
       .where(eq(rsvps.eventSlug, slug))
       .orderBy(asc(rsvps.createdAt));
 
-    // isYou is filled in by the caller once auth exists; it needs the viewer.
+    // isYou is resolved by the caller, which is the only place that knows who
+    // is looking at the page.
     return rows.map((r) => ({ ...r, isYou: false }));
   } catch (error) {
     console.error(`[rsvps] failed to load attendees for "${slug}":`, error);

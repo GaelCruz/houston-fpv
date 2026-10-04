@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import AttendeeList from "@/components/AttendeeList";
 import EventTypeBadge from "@/components/EventTypeBadge";
 import PhotoGallery from "@/components/PhotoGallery";
+import RsvpButton from "@/components/RsvpButton";
 import { openDirections } from "@/lib/directions";
 import { formatEventWhen } from "@/lib/format";
-import type { Attendee, ResolvedEvent, RsvpAttendee } from "@/types";
+import type { Attendee, ResolvedEvent, RsvpAttendee, Viewer } from "@/types";
+
+const EMPTY_VIEWER: Viewer = { signedIn: false, hasProfile: false, rsvped: false };
 
 /**
  * A sheet, not a modal: covering the map would hide the spatial context that is
@@ -21,7 +25,18 @@ export default function EventDetailPanel({
   event: ResolvedEvent | null;
   onClose: () => void;
 }) {
-  const [loaded, setLoaded] = useState<{ slug: string; attendees: RsvpAttendee[] } | null>(null);
+  const [loaded, setLoaded] = useState<{
+    slug: string;
+    attendees: RsvpAttendee[];
+    viewer: Viewer;
+  } | null>(null);
+  // Bumped after a successful RSVP to pull fresh attendees and viewer state.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((n) => n + 1), []);
+
+  // Signing in through the modal changes who the server sees, so the panel has
+  // to re-ask. Without this the button would still think you were signed out.
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     if (!event) return;
@@ -48,18 +63,22 @@ export default function EventDetailPanel({
         const res = await fetch(`/api/events/${encodeURIComponent(slug)}/attendees`, {
           signal: controller.signal,
         });
-        const data = res.ok ? await res.json() : { attendees: [] };
-        setLoaded({ slug, attendees: data.attendees ?? [] });
+        const data = res.ok ? await res.json() : {};
+        setLoaded({
+          slug,
+          attendees: data.attendees ?? [],
+          viewer: data.viewer ?? EMPTY_VIEWER,
+        });
       } catch (error) {
         if ((error as Error).name === "AbortError") return;
         // Seed attendees still render; a failed fetch costs only the real ones.
         console.error("[panel] could not load signups:", error);
-        setLoaded({ slug, attendees: [] });
+        setLoaded({ slug, attendees: [], viewer: EMPTY_VIEWER });
       }
     })();
 
     return () => controller.abort();
-  }, [slug]);
+  }, [slug, refreshKey, isSignedIn]);
 
   /**
    * Whether the loaded data belongs to the event on screen. Deriving this rather
@@ -67,6 +86,7 @@ export default function EventDetailPanel({
    * previous event's signups.
    */
   const loadingRsvps = Boolean(slug) && loaded?.slug !== slug;
+  const viewer = loaded && loaded.slug === slug ? loaded.viewer : EMPTY_VIEWER;
 
   const attendees: Attendee[] = useMemo(() => {
     if (!event) return [];
@@ -133,6 +153,9 @@ export default function EventDetailPanel({
         </Section>
 
         <Section title={`Pilots flying (${attendees.length})`}>
+          <div className="mb-3">
+            <RsvpButton slug={event.slug} viewer={viewer} onChanged={refresh} />
+          </div>
           <AttendeeList attendees={attendees} loading={loadingRsvps} />
         </Section>
       </div>

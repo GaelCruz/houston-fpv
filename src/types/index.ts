@@ -1,12 +1,20 @@
 export type EventType = "racing" | "casual";
 
-export type DroneClass =
-  | "5-inch"
-  | "7-inch"
-  | "whoop"
-  | "cinewhoop"
-  | "freestyle"
-  | "other";
+/**
+ * Declared as a const array so the same list is available at runtime. The server
+ * actions validate submitted drone classes against it — a type alone would give
+ * no protection against a hand-crafted request.
+ */
+export const DRONE_CLASSES = [
+  "5-inch",
+  "7-inch",
+  "whoop",
+  "cinewhoop",
+  "freestyle",
+  "other",
+] as const;
+
+export type DroneClass = (typeof DRONE_CLASSES)[number];
 
 export type VenueSurface = "paved" | "grass" | "indoor" | "mixed";
 
@@ -82,11 +90,23 @@ export interface DroneLike {
 /** A real pilot who signed up, read from Postgres. */
 export interface RsvpAttendee {
   id: number;
+  pilotId: number;
   username: string;
   droneName: string;
   droneClass: DroneClass;
-  /** True when this row belongs to the viewer. Always false until auth lands. */
+  /** True when this row belongs to the person viewing the page. */
   isYou: boolean;
+}
+
+/**
+ * Who is looking at this event, resolved server-side. The RSVP button needs all
+ * three to pick its state, and bundling them with the attendee list means the
+ * panel makes one request instead of three.
+ */
+export interface Viewer {
+  signedIn: boolean;
+  hasProfile: boolean;
+  rsvped: boolean;
 }
 
 /**

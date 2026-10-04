@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import HeaderAuth from "@/components/HeaderAuth";
 import MapExplorer from "@/components/MapExplorer";
 import { getResolvedEvents } from "@/lib/data";
 
@@ -16,6 +17,7 @@ export default function Home() {
         <p className="hidden truncate text-sm text-muted sm:block">
           Drone meetups across the greater Houston area
         </p>
+        <HeaderAuth />
       </header>
 
       <div className="min-h-0 flex-1">
