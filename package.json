@@ -12,8 +12,7 @@
     "prebuild": "npm run copy:maplibre",
     "postinstall": "npm run copy:maplibre",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate-seed": "tsx scripts/migrate-seed-to-db.ts"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.10",

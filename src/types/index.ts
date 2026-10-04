@@ -16,31 +16,9 @@ export const DRONE_CLASSES = [
 
 export type DroneClass = (typeof DRONE_CLASSES)[number];
 
-export type VenueSurface = "paved" | "grass" | "indoor" | "mixed";
+export const VENUE_SURFACES = ["paved", "grass", "indoor", "mixed"] as const;
 
-/** A drone build. `model3d` is the hook for real GLB avatars later. */
-export interface Drone {
-  id: string;
-  name: string;
-  class: DroneClass;
-  specs?: {
-    motors?: string;
-    vtx?: string;
-    weightGrams?: number;
-  };
-  /** Flat image shown today. */
-  imageUrl: string | null;
-  /** Path to a .glb once real models exist. Null everywhere for now. */
-  model3d: string | null;
-}
-
-/** A pilot. Becomes a row keyed on an auth user id once accounts land. */
-export interface Pilot {
-  id: string;
-  username: string;
-  droneId: string;
-  homeField?: string;
-}
+export type VenueSurface = (typeof VENUE_SURFACES)[number];
 
 export interface VenuePhoto {
   url: string;
@@ -48,7 +26,9 @@ export interface VenuePhoto {
 }
 
 export interface Venue {
-  id: string;
+  id: number;
+  /** Stable public handle, independent of the serial id. */
+  slug: string;
   name: string;
   address: string;
   lat: number;
@@ -56,38 +36,37 @@ export interface Venue {
   surface: VenueSurface;
   photos: VenuePhoto[];
   /** Access rules, AMA membership, airspace warnings. */
-  notes?: string;
+  notes?: string | null;
 }
 
 export interface DroneEvent {
-  id: string;
+  id: number;
+  /** Used in ?event=<slug> links and referenced by rsvps.event_slug. */
   slug: string;
   title: string;
   type: EventType;
-  /** ISO 8601 */
+  /** ISO 8601. Stored as timestamptz; serialised here so it crosses to the client. */
   startsAt: string;
-  endsAt?: string;
-  venueId: string;
+  endsAt?: string | null;
+  venueId: number;
   description: string;
-  attendeeIds: string[];
-  /** Reserved for tournaments. Unused today. */
-  tournamentId?: string;
+  /** Drafts never reach the public map or the public API. */
+  published: boolean;
 }
 
-/** An event with its venue and attendees already resolved. */
+/** An event with its venue already resolved — what the map and panel consume. */
 export interface ResolvedEvent extends DroneEvent {
   venue: Venue;
-  attendees: { pilot: Pilot; drone: Drone }[];
 }
 
-/** The minimum needed to draw a drone. Both seed drones and RSVP'd builds satisfy it. */
+/** The minimum needed to draw a drone. */
 export interface DroneLike {
   name: string;
   class: DroneClass;
   imageUrl?: string | null;
 }
 
-/** A real pilot who signed up, read from Postgres. */
+/** A pilot who signed up, read from Postgres. */
 export interface RsvpAttendee {
   id: number;
   pilotId: number;
@@ -108,12 +87,3 @@ export interface Viewer {
   hasProfile: boolean;
   rsvped: boolean;
 }
-
-/**
- * Seed pilots are illustrative demo content; RSVP rows are real people. A
- * discriminated union forces the UI to handle both and makes it impossible to
- * render a real signup as demo data by accident.
- */
-export type Attendee =
-  | { kind: "seed"; pilot: Pilot; drone: Drone }
-  | { kind: "rsvp"; rsvp: RsvpAttendee };

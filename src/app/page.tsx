@@ -4,8 +4,16 @@ import HeaderAuth from "@/components/HeaderAuth";
 import MapExplorer from "@/components/MapExplorer";
 import { getResolvedEvents } from "@/lib/data";
 
-export default function Home() {
-  const events = getResolvedEvents();
+/**
+ * Drizzle queries don't go through Next's data cache, so without this the DB
+ * read would make the public map dynamic. Prerendered and regenerated at most
+ * every 5 minutes — admin mutations call revalidatePath("/") so edits show up
+ * immediately rather than waiting out the window.
+ */
+export const revalidate = 300;
+
+export default async function Home() {
+  const events = await getResolvedEvents();
 
   return (
     <main className="flex h-svh flex-col">

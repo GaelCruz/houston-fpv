@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import AttendeeList from "@/components/AttendeeList";
 import EventTypeBadge from "@/components/EventTypeBadge";
@@ -9,7 +9,7 @@ import PhotoGallery from "@/components/PhotoGallery";
 import RsvpButton from "@/components/RsvpButton";
 import { openDirections } from "@/lib/directions";
 import { formatEventWhen } from "@/lib/format";
-import type { Attendee, ResolvedEvent, RsvpAttendee, Viewer } from "@/types";
+import type { ResolvedEvent, RsvpAttendee, Viewer } from "@/types";
 
 const EMPTY_VIEWER: Viewer = { signedIn: false, hasProfile: false, rsvped: false };
 
@@ -71,7 +71,7 @@ export default function EventDetailPanel({
         });
       } catch (error) {
         if ((error as Error).name === "AbortError") return;
-        // Seed attendees still render; a failed fetch costs only the real ones.
+        // The panel still renders; a failed fetch costs only the signup list.
         console.error("[panel] could not load signups:", error);
         setLoaded({ slug, attendees: [], viewer: EMPTY_VIEWER });
       }
@@ -88,14 +88,7 @@ export default function EventDetailPanel({
   const loadingRsvps = Boolean(slug) && loaded?.slug !== slug;
   const viewer = loaded && loaded.slug === slug ? loaded.viewer : EMPTY_VIEWER;
 
-  const attendees: Attendee[] = useMemo(() => {
-    if (!event) return [];
-    const rsvps = loaded && loaded.slug === event.slug ? loaded.attendees : [];
-    return [
-      ...event.attendees.map((a) => ({ kind: "seed" as const, pilot: a.pilot, drone: a.drone })),
-      ...rsvps.map((rsvp) => ({ kind: "rsvp" as const, rsvp })),
-    ];
-  }, [event, loaded]);
+  const attendees = loaded && loaded.slug === slug ? loaded.attendees : [];
 
   if (!event) return null;
 

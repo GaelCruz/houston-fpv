@@ -41,8 +41,8 @@ export async function rsvpToEvent(slug: string): Promise<ActionResult> {
   const session = await requireUserId();
   if (!session.ok) return session;
 
-  // Validate against the seed so an arbitrary string never reaches the table.
-  if (!getEventBySlug(slug)) {
+  // Published-only lookup, so arbitrary strings AND drafts are both rejected.
+  if (!(await getEventBySlug(slug))) {
     return { ok: false, error: "That event doesn't exist." };
   }
 

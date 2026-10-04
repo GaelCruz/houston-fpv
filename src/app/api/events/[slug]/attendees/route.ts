@@ -26,7 +26,8 @@ export async function GET(
   const { slug } = await params;
 
   // Validate against the seed so arbitrary strings never reach a query.
-  if (!getEventBySlug(slug)) {
+  // Published-only, so a draft's attendee list is a 404, not an empty list.
+  if (!(await getEventBySlug(slug))) {
     return NextResponse.json({ error: "Unknown event" }, { status: 404 });
   }
 
