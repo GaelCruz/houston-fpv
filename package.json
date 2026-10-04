@@ -10,9 +10,13 @@
     "copy:maplibre": "node scripts/copy-maplibre-worker.mjs",
     "predev": "npm run copy:maplibre",
     "prebuild": "npm run copy:maplibre",
-    "postinstall": "npm run copy:maplibre"
+    "postinstall": "npm run copy:maplibre",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "drizzle-orm": "^0.45.3",
     "maplibre-gl": "^6.12.0",
     "next": "16.3.8",
     "react": "19.2.8",
@@ -23,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
