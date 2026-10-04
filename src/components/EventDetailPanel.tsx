@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import AttendeeList from "@/components/AttendeeList";
 import EventTypeBadge from "@/components/EventTypeBadge";
 import PhotoGallery from "@/components/PhotoGallery";
+import { openDirections } from "@/lib/directions";
 import { formatEventWhen } from "@/lib/format";
 import type { ResolvedEvent } from "@/types";
 
@@ -63,6 +64,17 @@ export default function EventDetailPanel({
           <p className="font-medium">{venue.name}</p>
           <p className="text-sm text-muted">{venue.address}</p>
           <p className="mt-1 text-xs tracking-wide text-muted uppercase">{venue.surface} surface</p>
+          <button
+            type="button"
+            onClick={() => openDirections(venue)}
+            aria-label={`Directions to ${venue.name}`}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium transition-colors hover:border-casual/50 hover:text-casual focus-visible:ring-2 focus-visible:ring-casual focus-visible:outline-none"
+          >
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 11l19-9-9 19-2-8-8-2z" />
+            </svg>
+            Directions
+          </button>
           {venue.notes ? (
             <p className="mt-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted">
               {venue.notes}
