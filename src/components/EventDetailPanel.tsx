@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import AttendeeList from "@/components/AttendeeList";
@@ -121,7 +122,13 @@ export default function EventDetailPanel({
         <p className="text-sm leading-relaxed text-foreground/85">{event.description}</p>
 
         <Section title="Location">
-          <p className="font-medium">{venue.name}</p>
+          {/* The venue page is where this location's past meetups live. */}
+          <Link
+            href={`/venues/${encodeURIComponent(venue.slug)}`}
+            className="font-medium underline decoration-border underline-offset-4 hover:text-casual"
+          >
+            {venue.name}
+          </Link>
           <p className="text-sm text-muted">{venue.address}</p>
           <p className="mt-1 text-xs tracking-wide text-muted uppercase">{venue.surface} surface</p>
           <button

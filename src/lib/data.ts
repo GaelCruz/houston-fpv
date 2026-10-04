@@ -148,3 +148,41 @@ export async function adminGetEventById(id: number): Promise<DroneEvent | undefi
   const [row] = await db.select().from(events).where(eq(events.id, id)).limit(1);
   return row ? toEvent(row) : undefined;
 }
+
+/** Public venue page lookup. */
+export async function getVenueBySlug(slug: string): Promise<Venue | undefined> {
+  const db = tryGetDb();
+  if (!db) return undefined;
+
+  try {
+    const [row] = await db.select().from(venues).where(eq(venues.slug, slug)).limit(1);
+    return row ? toVenue(row) : undefined;
+  } catch (error) {
+    console.error(`[data] failed to load venue "${slug}":`, error);
+    return undefined;
+  }
+}
+
+/**
+ * Every published event at one venue, past included — the location's history is
+ * the point of the page. Newest-scheduled last, so the caller can split on time
+ * without re-sorting.
+ */
+export async function getEventsAtVenue(venueId: number): Promise<ResolvedEvent[]> {
+  const db = tryGetDb();
+  if (!db) return [];
+
+  try {
+    const rows = await db
+      .select({ event: events, venue: venues })
+      .from(events)
+      .innerJoin(venues, eq(events.venueId, venues.id))
+      .where(and(eq(events.venueId, venueId), eq(events.published, true)))
+      .orderBy(asc(events.startsAt));
+
+    return rows.map((r) => ({ ...toEvent(r.event), venue: toVenue(r.venue) }));
+  } catch (error) {
+    console.error(`[data] failed to load events for venue ${venueId}:`, error);
+    return [];
+  }
+}
