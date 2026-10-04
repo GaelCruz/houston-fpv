@@ -1,11 +1,74 @@
-import { index, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-import type { DroneClass } from "@/types";
+import type { DroneClass, EventType, VenuePhoto, VenueSurface } from "@/types";
 
 /**
- * Only pilot profiles and RSVPs live in Postgres. Events, venues and drones stay
- * as static seed files in src/data — they're editorial content, not user data.
+ * Events and venues live here rather than in static files because the admin
+ * page edits them from a browser — a web form cannot write to compiled
+ * TypeScript. Demo pilots and drones used to be seed files too; they were
+ * removed, so attendee lists show only real signups.
  */
+
+export const venues = pgTable("venues", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  surface: text("surface").$type<VenueSurface>().notNull(),
+  /** Access rules, AMA membership, airspace warnings. */
+  notes: text("notes"),
+  /**
+   * Photo uploads are deferred, not abandoned. Keeping the column carries the
+   * migrated placeholder art and leaves room for real uploads later without
+   * another migration.
+   */
+  photos: jsonb("photos").$type<VenuePhoto[]>().notNull().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const events = pgTable(
+  "events",
+  {
+    id: serial("id").primaryKey(),
+    /**
+     * Public handle, used in ?event=<slug> links and referenced by rsvps.
+     * Renaming one cascades to RSVPs rather than orphaning them (see rsvps).
+     */
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    type: text("type").$type<EventType>().notNull(),
+    /**
+     * timestamptz rather than the offset-bearing ISO strings the seed files
+     * used, so the instant is unambiguous. Display still pins America/Chicago.
+     */
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    venueId: integer("venue_id")
+      .notNull()
+      // A venue in use by an event must not silently disappear.
+      .references(() => venues.id, { onDelete: "restrict" }),
+    description: text("description").notNull(),
+    /** Drafts are invisible to the public map and the public API. */
+    published: boolean("published").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("events_published_starts_idx").on(t.published, t.startsAt)],
+);
 
 export const pilots = pgTable("pilots", {
   id: serial("id").primaryKey(),
@@ -25,15 +88,18 @@ export const rsvps = pgTable(
   {
     id: serial("id").primaryKey(),
     /**
-     * Deliberately NOT a foreign key: events live in static TS files, so Postgres
-     * cannot enforce this reference.
+     * A real foreign key now that events live in Postgres. The two rules below
+     * fix both hazards the file-based version only documented:
      *
-     * Consequence: an event slug is permanent once published. Renaming one
-     * silently orphans real RSVPs. Deleting an event leaves rows that no query
-     * will ever surface (everything is keyed by slug), which is harmless but
-     * wants a deliberate cleanup rather than a cascade.
+     * - onUpdate cascade: renaming a slug follows through to existing RSVPs
+     *   instead of orphaning them, so slugs are editable again.
+     * - onDelete restrict: deleting an event real people signed up for FAILS
+     *   rather than silently erasing their RSVPs. The admin UI catches this and
+     *   offers unpublish instead.
      */
-    eventSlug: text("event_slug").notNull(),
+    eventSlug: text("event_slug")
+      .notNull()
+      .references(() => events.slug, { onUpdate: "cascade", onDelete: "restrict" }),
     pilotId: integer("pilot_id")
       .notNull()
       .references(() => pilots.id, { onDelete: "cascade" }),
@@ -49,3 +115,5 @@ export const rsvps = pgTable(
 
 export type PilotRow = typeof pilots.$inferSelect;
 export type RsvpRow = typeof rsvps.$inferSelect;
+export type VenueRow = typeof venues.$inferSelect;
+export type EventRow = typeof events.$inferSelect;
