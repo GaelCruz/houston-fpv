@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { tryGetDb } from "@/db";
 import { events, venues } from "@/db/schema";
@@ -15,7 +15,7 @@ import type { DroneEvent, ResolvedEvent, Venue } from "@/types";
  * RSVP actions — all three validate through getEventBySlug.
  */
 
-function toVenue(row: VenueRow): Venue {
+export function toVenue(row: VenueRow): Venue {
   return {
     id: row.id,
     slug: row.slug,
@@ -29,7 +29,7 @@ function toVenue(row: VenueRow): Venue {
   };
 }
 
-function toEvent(row: EventRow): DroneEvent {
+export function toEvent(row: EventRow): DroneEvent {
   return {
     id: row.id,
     slug: row.slug,
@@ -44,8 +44,14 @@ function toEvent(row: EventRow): DroneEvent {
   };
 }
 
-/** Published events with their venues, soonest first. The public map's source. */
-export async function getResolvedEvents(): Promise<ResolvedEvent[]> {
+/**
+ * Published, still-upcoming events with their venues — the public map's source.
+ *
+ * Finished meetups are excluded in SQL rather than in the component, so they
+ * never reach the client at all. An event with no end time is assumed to run
+ * three hours, matching endInstant() in src/lib/eventTime.ts.
+ */
+export async function getUpcomingEvents(): Promise<ResolvedEvent[]> {
   const db = tryGetDb();
   if (!db) return [];
 
@@ -54,7 +60,12 @@ export async function getResolvedEvents(): Promise<ResolvedEvent[]> {
       .select({ event: events, venue: venues })
       .from(events)
       .innerJoin(venues, eq(events.venueId, venues.id))
-      .where(eq(events.published, true))
+      .where(
+        and(
+          eq(events.published, true),
+          sql`coalesce(${events.endsAt}, ${events.startsAt} + interval '3 hours') >= now()`,
+        ),
+      )
       .orderBy(asc(events.startsAt));
 
     return rows.map((r) => ({ ...toEvent(r.event), venue: toVenue(r.venue) }));

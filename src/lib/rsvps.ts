@@ -1,8 +1,9 @@
 import { asc, eq, inArray, sql } from "drizzle-orm";
 
 import { tryGetDb } from "@/db";
-import { pilots, rsvps } from "@/db/schema";
-import type { RsvpAttendee } from "@/types";
+import { events, pilots, rsvps, venues } from "@/db/schema";
+import { toEvent, toVenue } from "@/lib/data";
+import type { ResolvedEvent, RsvpAttendee } from "@/types";
 
 /**
  * The async, database-backed half of the data layer.
@@ -81,5 +82,36 @@ export async function getPilotByClerkId(clerkUserId: string) {
   } catch (error) {
     console.error("[rsvps] failed to load pilot profile:", error);
     return null;
+  }
+}
+
+/**
+ * Every event a pilot has RSVP'd to, with its venue — past ones included,
+ * because "what have I flown this year" is half the point of the page.
+ *
+ * Joined through clerk_user_id so the caller passes a session id and never has
+ * to resolve the pilot first.
+ */
+export async function getEventsForPilot(clerkUserId: string): Promise<ResolvedEvent[]> {
+  const db = tryGetDb();
+  if (!db) return [];
+
+  try {
+    const rows = await db
+      .select({ event: events, venue: venues })
+      .from(rsvps)
+      .innerJoin(pilots, eq(rsvps.pilotId, pilots.id))
+      .innerJoin(events, eq(rsvps.eventSlug, events.slug))
+      .innerJoin(venues, eq(events.venueId, venues.id))
+      .where(eq(pilots.clerkUserId, clerkUserId))
+      .orderBy(asc(events.startsAt));
+
+    return rows.map((r) => ({
+      ...toEvent(r.event),
+      venue: toVenue(r.venue),
+    }));
+  } catch (error) {
+    console.error("[rsvps] failed to load events for pilot:", error);
+    return [];
   }
 }
