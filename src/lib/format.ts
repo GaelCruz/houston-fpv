@@ -32,3 +32,51 @@ export function formatEventWhen(event: DroneEvent): string {
 export function formatEventDay(event: DroneEvent): string {
   return dayFormatter.format(new Date(event.startsAt));
 }
+
+/**
+ * `datetime-local` inputs have no timezone. The admin is entering Houston local
+ * time, so these two convert between that and the UTC instants Postgres stores.
+ *
+ * The trick: format the instant in the target zone, read it back as if it were
+ * UTC, and the difference is that zone's offset at that moment — which handles
+ * CST/CDT without hard-coding either.
+ */
+function zoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value]),
+  );
+  const asIfUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour) % 24,
+    Number(parts.minute),
+    Number(parts.second),
+  );
+  return asIfUtc - date.getTime();
+}
+
+/** "2026-10-10T18:00" entered as Houston time → the correct UTC instant. */
+export function houstonLocalToDate(local: string): Date {
+  const naive = new Date(`${local}:00Z`);
+  if (Number.isNaN(naive.getTime())) throw new Error(`Invalid date/time: ${local}`);
+  return new Date(naive.getTime() - zoneOffsetMs(naive, TZ));
+}
+
+/** UTC instant → "2026-10-10T18:00" for a datetime-local input. */
+export function dateToHoustonLocal(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const shifted = new Date(date.getTime() + zoneOffsetMs(date, TZ));
+  return shifted.toISOString().slice(0, 16);
+}
