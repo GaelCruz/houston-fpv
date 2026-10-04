@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Bear Creek — Grass + treeline (placeholder)">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#171a1f"/>
+      <stop offset="1" stop-color="#0b0d10"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#g)"/>
+  <g stroke="#4ade80" stroke-opacity="0.16" stroke-width="1">
+    <path d="M0 210 H400 M0 240 H400 M0 270 H400"/>
+    <path d="M60 300 V200 M140 300 V200 M220 300 V200 M300 300 V200 M380 300 V200"/>
+  </g>
+  <path d="M0 205 L90 176 L170 196 L250 162 L330 188 L400 170 V300 H0 Z" fill="#4ade80" fill-opacity="0.09"/>
+  <circle cx="320" cy="66" r="22" fill="#4ade80" fill-opacity="0.18"/>
+  <g fill="none" stroke="#4ade80" stroke-opacity="0.75" stroke-width="2.4" stroke-linecap="round" transform="translate(44 44)">
+    <circle cx="9" cy="9" r="6"/><circle cx="35" cy="9" r="6"/>
+    <circle cx="9" cy="35" r="6"/><circle cx="35" cy="35" r="6"/>
+    <path d="M13.5 13.5 17 17M30.5 13.5 27 17M13.5 30.5 17 27M30.5 30.5 27 27"/>
+    <rect x="15" y="15" width="14" height="14" rx="3"/>
+  </g>
+  <text x="28" y="232" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="25" font-weight="650" fill="#e8eaed">Bear Creek</text>
+  <text x="28" y="258" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="15" fill="#9aa0a9">Grass + treeline</text>
+  <text x="28" y="284" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" letter-spacing="1.6" fill="#4ade80" fill-opacity="0.8">PLACEHOLDER IMAGE</text>
+</svg>

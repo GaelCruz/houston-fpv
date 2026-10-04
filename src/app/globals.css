@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/*
+ * Dark-only by design: this is an FPV site and the near-black basemap is the
+ * point. Every colour is painted explicitly so nothing borrows the host theme.
+ */
+:root {
+  --background: #08090b;
+  --surface: #111317;
+  --surface-raised: #171a1f;
+  --border: #23262d;
+  --foreground: #e8eaed;
+  --muted: #9aa0a9;
+  --racing: #ff5436;
+  --casual: #22d3ee;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-racing: var(--racing);
+  --color-casual: var(--casual);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Map pins ----------
+ * Styled here rather than with Tailwind classes because the marker elements are
+ * created imperatively by MapLibre, outside React's render tree.
+ */
+.fpv-pin {
+  --pin: var(--casual);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid var(--pin);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pin) 22%, #06070a);
+  color: var(--pin);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--pin) 45%, transparent);
+}
+
+.fpv-pin[data-type="racing"] {
+  --pin: var(--racing);
+  /* Shape differs from casual so type never relies on colour alone. */
+  border-radius: 8px;
+  transform: rotate(45deg);
+}
+
+.fpv-pin[data-type="racing"] .fpv-pin__glyph {
+  transform: rotate(-45deg);
+}
+
+.fpv-pin:hover,
+.fpv-pin:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--pin) 28%, transparent);
+}
+
+.fpv-pin[data-type="casual"]:hover,
+.fpv-pin[data-type="casual"]:focus-visible {
+  transform: scale(1.12);
+}
+
+.fpv-pin[data-type="racing"]:hover,
+.fpv-pin[data-type="racing"]:focus-visible {
+  transform: rotate(45deg) scale(1.12);
+}
+
+.fpv-pin[data-selected="true"] {
+  background: var(--pin);
+  color: #06070a;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--pin) 30%, transparent);
+}
+
+.fpv-pin__glyph {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.fpv-pin__glyph svg {
+  width: 17px;
+  height: 17px;
+}
+
+/*
+ * OpenFreeMap's dark style paints roads around #2a2a2a on a #0c0c0c ground,
+ * which is accurate but reads as an empty black void on most screens. Lifting
+ * the canvas brings streets and labels back without touching the style JSON.
+ * Applied to the canvas alone so markers and controls keep their true colours.
+ */
+.maplibregl-canvas {
+  filter: brightness(1.75) contrast(1.06) saturate(1.15);
+}
+
+/* Tone MapLibre's own chrome down to match the dark shell. */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgba(8, 9, 11, 0.82);
+  color: var(--muted);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--muted);
+}
+
+.maplibregl-ctrl-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--border);
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.4);
+}

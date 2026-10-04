@@ -1,0 +1,60 @@
+import type { Drone } from "@/types";
+
+export const drones: Drone[] = [
+  {
+    id: "d-apex5",
+    name: "Apex 5",
+    class: "5-inch",
+    specs: { motors: "2207 1960kv", vtx: "DJI O3", weightGrams: 640 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-longshot",
+    name: "Longshot 7",
+    class: "7-inch",
+    specs: { motors: "2807 1300kv", vtx: "Walksnail Avatar", weightGrams: 880 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-pocket-rocket",
+    name: "Pocket Rocket",
+    class: "whoop",
+    specs: { motors: "0802 22000kv", vtx: "ELRS analog", weightGrams: 28 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-glasshouse",
+    name: "Glasshouse",
+    class: "cinewhoop",
+    specs: { motors: "1507 3000kv", vtx: "DJI O4", weightGrams: 410 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-bayou-bender",
+    name: "Bayou Bender",
+    class: "freestyle",
+    specs: { motors: "2306 1850kv", vtx: "HDZero Freestyle", weightGrams: 610 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-stormcell",
+    name: "Stormcell",
+    class: "5-inch",
+    specs: { motors: "2207 2400kv", vtx: "HDZero Race", weightGrams: 585 },
+    imageUrl: null,
+    model3d: null,
+  },
+  {
+    id: "d-mudbug",
+    name: "Mudbug",
+    class: "other",
+    specs: { motors: "1404 4600kv", vtx: "ELRS analog", weightGrams: 190 },
+    imageUrl: null,
+    model3d: null,
+  },
+];
